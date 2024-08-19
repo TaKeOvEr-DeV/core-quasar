@@ -5,9 +5,18 @@
 
 
 import { configure } from 'quasar/wrappers';
+import { BuildOptions } from 'typescript';
+import { mergeConfig } from 'vite'
+import { rollupOptions } from './extendVite.config'
+// import vueDevTools from 'vite-plugin-vue-devtools';
+import { fileURLToPath, URL } from 'node:url';
 
 
-export default configure((/* ctx */) => {
+
+
+export default configure(() => {
+
+  // console.log(ctx);
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
@@ -16,7 +25,7 @@ export default configure((/* ctx */) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
-      
+
       'axios',
     ],
 
@@ -24,6 +33,7 @@ export default configure((/* ctx */) => {
     css: [
       'app.scss'
     ],
+
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [
@@ -41,14 +51,16 @@ export default configure((/* ctx */) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
+
       target: {
-        browser: [ 'es2022', 'firefox115', 'chrome115', 'safari14' ],
+        browser: ['es2022', 'firefox115', 'chrome115', 'safari14'],
         node: 'node20'
       },
 
-      vueRouterMode: 'hash', // available values: 'hash', 'history'
+
+      vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,
-      // vueDevtools,
+      // vueDevtools: true,
       // vueOptionsAPI: false,
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
@@ -62,10 +74,37 @@ export default configure((/* ctx */) => {
       // polyfillModulePreload: true,
       // distDir
 
-      // extendViteConf (viteConf) {},
-      // viteVuePluginOptions: {},
+      extendViteConf(viteConf) {
+
+        viteConf.build = mergeConfig(viteConf.build as BuildOptions, {
+          rollupOptions
+        },
+        );
+        viteConf.resolve = mergeConfig(viteConf.resolve as BuildOptions, {
+          alias: {
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
+          },
+          extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
+        });
+      },
+      viteVuePluginOptions: {},
 
       vitePlugins: [
+        ['vite-plugin-vue-devtools', {}],
+        ['unplugin-vue-components/vite', {
+          dirs: ['src/components/common', 'src/components/Layout'],
+          dts: 'src/components.d.ts',
+        }],
+        ['unplugin-auto-import/vite', {
+          imports: [
+            'vue'
+          ],
+          dts: 'src/auto-imports.d.ts',
+          eslintrc: {
+            enabled: true,
+          },
+          vueTemplate: true,
+        }],
         ['vite-plugin-checker', {
           vueTsc: {
             tsconfigPath: 'tsconfig.vue-tsc.json'
@@ -86,6 +125,7 @@ export default configure((/* ctx */) => {
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
     framework: {
       config: {},
+
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
@@ -121,7 +161,7 @@ export default configure((/* ctx */) => {
     // https://v2.quasar.dev/quasar-cli-vite/developing-ssr/configuring-ssr
     ssr: {
       prodPort: 3000, // The default port that the production server should use
-                      // (gets superseded if process.env.PORT is specified at runtime)
+      // (gets superseded if process.env.PORT is specified at runtime)
 
       middlewares: [
         'render' // keep this as last one
@@ -138,7 +178,7 @@ export default configure((/* ctx */) => {
       pwa: false
 
       // pwaOfflineHtmlFilename: 'offline.html', // do NOT use index.html as name!
-                                                 // will mess up SSR
+      // will mess up SSR
 
       // pwaExtendGenerateSWOptions (cfg) {},
       // pwaExtendInjectManifestOptions (cfg) {}
@@ -175,7 +215,7 @@ export default configure((/* ctx */) => {
       // extendPackageJson (json) {},
 
       // Electron preload scripts (if any) from /src-electron, WITHOUT file extension
-      preloadScripts: [ 'electron-preload' ],
+      preloadScripts: ['electron-preload'],
 
       // specify the debugging port to use for the Electron app when running in development mode
       inspectPort: 5858,
